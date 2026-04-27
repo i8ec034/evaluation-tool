@@ -1,0 +1,13 @@
+fastapi
+uvicorn
+streamlit
+google-generativeai
+chromadb
+sqlalchemy
+pandas
+openpyxl
+python-multipart
+pydantic
+pypdf2
+python-docx
+python-dotenv
