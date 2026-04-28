@@ -142,7 +142,7 @@ def admin_panel():
     st.title("Admin Panel")
     
     try:
-        admin_option = st.radio("Select Option", ["Upload Document", "Manage Content", "Quiz Results", "User Quiz Reset"], horizontal=True)
+        admin_option = st.radio("Select Option", ["Upload Document", "Manage Content", "User Management", "Quiz Results", "User Quiz Reset"], horizontal=True)
         
         if admin_option == "Upload Document":
             # Clear session state if switching to upload
@@ -482,6 +482,89 @@ def admin_panel():
                 db.close()
             except Exception as e:
                 st.error(f"❌ Error: {str(e)}")
+        
+        elif admin_option == "User Management":
+            try:
+                from app.modules.auth_module import get_all_users, add_admin_user, add_user, add_guest_user, remove_user, load_domains, load_subdomains
+                from app.config.settings import USE_DB_FOR_AUTH
+                
+                if not USE_DB_FOR_AUTH:
+                    st.warning("⚠️ User management is only available when USE_DB_FOR_AUTH is set to True in settings.py")
+                    return
+                
+                st.markdown("### 👥 User Management")
+                
+                # Display current users
+                st.markdown("#### 📋 Current Users")
+                users = get_all_users()
+                if users:
+                    for user in users:
+                        col1, col2, col3, col4 = st.columns([3, 2, 3, 1])
+                        with col1:
+                            st.write(f"**{user['username']}**")
+                        with col2:
+                            st.write(f"Role: {user['role']}")
+                        with col3:
+                            if user['role'] == 'user':
+                                st.write(f"Domain: {user.get('domain', 'N/A')}")
+                                st.write(f"Subdomain: {user.get('subdomain', 'N/A')}")
+                            else:
+                                st.write("-")
+                        with col4:
+                            if st.button("🗑️", key=f"del_user_{user['username']}_{user['role']}"):
+                                if remove_user(user['username'], user['role']):
+                                    st.success(f"✅ Removed {user['username']}")
+                                    st.rerun()
+                                else:
+                                    st.error("❌ Failed to remove user")
+                else:
+                    st.info("No users found")
+                
+                st.markdown("---")
+                st.markdown("#### ➕ Add New User")
+                
+                user_type = st.selectbox("User Type", ["admin", "user", "guest"], key="user_type")
+                
+                col1, col2 = st.columns(2)
+                with col1:
+                    new_username = st.text_input("Username", key="new_username")
+                with col2:
+                    new_password = st.text_input("Password", type="password", key="new_password")
+                
+                if user_type == "user":
+                    domains = load_domains()
+                    selected_domain = st.selectbox("Domain", domains or [], key="user_domain")
+                    if selected_domain:
+                        subdomains = load_subdomains(selected_domain)
+                        selected_subdomain = st.selectbox("Subdomain", subdomains or [], key="user_subdomain")
+                    else:
+                        selected_subdomain = None
+                        st.warning("Please select a domain first")
+                
+                if st.button("Add User"):
+                    if not new_username or not new_password:
+                        st.error("❌ Username and password are required")
+                        return
+                    
+                    success = False
+                    if user_type == "admin":
+                        success = add_admin_user(new_username, new_password)
+                    elif user_type == "user":
+                        if not selected_domain or not selected_subdomain:
+                            st.error("❌ Domain and subdomain are required for users")
+                            return
+                        success = add_user(new_username, new_password, selected_domain, selected_subdomain)
+                    elif user_type == "guest":
+                        success = add_guest_user(new_username, new_password)
+                    
+                    if success:
+                        st.success(f"✅ Added {user_type} user: {new_username}")
+                        st.rerun()
+                    else:
+                        st.error(f"❌ Failed to add {user_type} user")
+                        
+            except Exception as e:
+                st.error(f"❌ User management error: {str(e)}")
         
         elif admin_option == "Quiz Results":
             try:

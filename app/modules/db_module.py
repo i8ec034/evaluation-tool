@@ -90,6 +90,32 @@ class UserStats(Base):
     longest_streak = Column(Integer, default=0)
     current_streak = Column(Integer, default=0)
 
+class Admin(Base):
+    __tablename__ = "admins"
+    id = Column(Integer, primary_key=True)
+    username = Column(String, unique=True)
+    password = Column(String)
+
+class User(Base):
+    __tablename__ = "users"
+    id = Column(Integer, primary_key=True)
+    username = Column(String, unique=True)
+    password = Column(String)
+    domain = Column(String)
+    subdomain = Column(String)
+
+class Guest(Base):
+    __tablename__ = "guests"
+    id = Column(Integer, primary_key=True)
+    username = Column(String, unique=True)
+    password = Column(String)
+
+class Domain(Base):
+    __tablename__ = "domains"
+    id = Column(Integer, primary_key=True)
+    domain = Column(String, unique=True)
+    subdomains = Column(Text)  # Comma-separated string
+
 Base.metadata.create_all(bind=engine)
 
 

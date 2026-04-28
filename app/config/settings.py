@@ -17,6 +17,9 @@ USER_SHEET = os.getenv("USER_SHEET", "users")
 GUEST_SHEET = os.getenv("GUEST_SHEET", "guest")
 DOMAIN_SHEET = os.getenv("DOMAIN_SHEET", "domains")
 
+# Authorization Configuration
+USE_DB_FOR_AUTH = os.getenv("USE_DB_FOR_AUTH", "True").lower() == "true"
+
 # LLM settings
 LLM_MODEL = os.getenv("LLM_MODEL", "gemini-2.5-flash")
 CHUNK_SIZE = int(os.getenv("CHUNK_SIZE", "1000"))

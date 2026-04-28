@@ -4,7 +4,7 @@
 		{
 			"label": "Run Streamlit App",
 			"type": "shell",
-			"command": "streamlit run app/frontend/app.py",
+			"command": "& ${workspaceFolder}/venv/Scripts/Activate.ps1 ; streamlit run app/frontend/app.py",
 			"isBackground": true,
 			"group": "build"
 		}
