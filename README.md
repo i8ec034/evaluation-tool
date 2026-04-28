@@ -36,11 +36,10 @@ This is a Python-based application for internal evaluations with gamification.
 
 ## User Management (Admin Only)
 When `USE_DB_FOR_AUTH=True`:
-- View all current users (admin, user, guest)
-- Add new users with roles (admin, user, guest)
-- For users: assign domain and subdomain
-- Remove users
-- Manage domains and subdomains
+- **Manage Users Tab**: Add new users (admin, user, guest) and remove existing users
+- **View Users Tab**: View all users with filtering by role, domain, and subdomain
+- For users: assign domain and subdomain during creation
+- Database tables: `admins`, `users`, `guests`, `domains`
 
 ## Configuration
 - `USE_DB_FOR_AUTH`: Set to `True` for database auth, `False` for Excel auth

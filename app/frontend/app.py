@@ -494,74 +494,153 @@ def admin_panel():
                 
                 st.markdown("### 👥 User Management")
                 
-                # Display current users
-                st.markdown("#### 📋 Current Users")
-                users = get_all_users()
-                if users:
-                    for user in users:
-                        col1, col2, col3, col4 = st.columns([3, 2, 3, 1])
-                        with col1:
-                            st.write(f"**{user['username']}**")
-                        with col2:
-                            st.write(f"Role: {user['role']}")
-                        with col3:
-                            if user['role'] == 'user':
-                                st.write(f"Domain: {user.get('domain', 'N/A')}")
-                                st.write(f"Subdomain: {user.get('subdomain', 'N/A')}")
-                            else:
-                                st.write("-")
-                        with col4:
-                            if st.button("🗑️", key=f"del_user_{user['username']}_{user['role']}"):
-                                if remove_user(user['username'], user['role']):
-                                    st.success(f"✅ Removed {user['username']}")
-                                    st.rerun()
-                                else:
-                                    st.error("❌ Failed to remove user")
-                else:
-                    st.info("No users found")
+                # Create tabs for different user management functions
+                tab1, tab2 = st.tabs(["➕ Manage Users", "📋 View Users"])
                 
-                st.markdown("---")
-                st.markdown("#### ➕ Add New User")
-                
-                user_type = st.selectbox("User Type", ["admin", "user", "guest"], key="user_type")
-                
-                col1, col2 = st.columns(2)
-                with col1:
-                    new_username = st.text_input("Username", key="new_username")
-                with col2:
-                    new_password = st.text_input("Password", type="password", key="new_password")
-                
-                if user_type == "user":
-                    domains = load_domains()
-                    selected_domain = st.selectbox("Domain", domains or [], key="user_domain")
-                    if selected_domain:
-                        subdomains = load_subdomains(selected_domain)
-                        selected_subdomain = st.selectbox("Subdomain", subdomains or [], key="user_subdomain")
-                    else:
-                        selected_subdomain = None
-                        st.warning("Please select a domain first")
-                
-                if st.button("Add User"):
-                    if not new_username or not new_password:
-                        st.error("❌ Username and password are required")
-                        return
+                with tab1:
+                    st.markdown("#### ➕ Add/Remove Users")
                     
-                    success = False
-                    if user_type == "admin":
-                        success = add_admin_user(new_username, new_password)
-                    elif user_type == "user":
-                        if not selected_domain or not selected_subdomain:
-                            st.error("❌ Domain and subdomain are required for users")
+                    # Add New User Section
+                    st.markdown("**Add New User**")
+                    st.info("💡 Fill in the details below and click 'Add User' to create a new account.")
+                    
+                    user_type = st.selectbox("User Type", ["admin", "user", "guest"], key="user_type")
+                    
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        new_username = st.text_input("Username", key="new_username", value=st.session_state.get('new_username', ''))
+                    with col2:
+                        new_password = st.text_input("Password", type="password", key="new_password", value=st.session_state.get('new_password', ''))
+                    
+                    if user_type == "user":
+                        domains = load_domains()
+                        selected_domain = st.selectbox("Domain", domains or [], key="user_domain")
+                        if selected_domain:
+                            subdomains = load_subdomains(selected_domain)
+                            selected_subdomain = st.selectbox("Subdomain", subdomains or [], key="user_subdomain")
+                        else:
+                            selected_subdomain = None
+                            st.warning("Please select a domain first")
+                    
+                    if st.button("Add User"):
+                        if not new_username or not new_password:
+                            st.error("❌ Username and password are required")
                             return
-                        success = add_user(new_username, new_password, selected_domain, selected_subdomain)
-                    elif user_type == "guest":
-                        success = add_guest_user(new_username, new_password)
+                        
+                        success = False
+                        if user_type == "admin":
+                            success = add_admin_user(new_username, new_password)
+                        elif user_type == "user":
+                            if not selected_domain or not selected_subdomain:
+                                st.error("❌ Domain and subdomain are required for users")
+                                return
+                            success = add_user(new_username, new_password, selected_domain, selected_subdomain)
+                        elif user_type == "guest":
+                            success = add_guest_user(new_username, new_password)
+                        
+                        if success:
+                            with st.expander("🎉 User Created Successfully!", expanded=True):
+                                if user_type == "admin":
+                                    st.write(f"👤 **Username:** `{new_username}`")
+                                    st.write(f"🔑 **Role:** Administrator")
+                                elif user_type == "user":
+                                    st.write(f"👤 **Username:** `{new_username}`")
+                                    st.write(f"🏢 **Domain:** `{selected_domain}`")
+                                    st.write(f"👥 **Subdomain:** `{selected_subdomain}`")
+                                elif user_type == "guest":
+                                    st.write(f"👤 **Username:** `{new_username}`")
+                                    st.write(f"🔑 **Role:** Guest")
+                        else:
+                            st.error(f"❌ Failed to add {user_type} user")
                     
-                    if success:
-                        st.success(f"✅ Added {user_type} user: {new_username}")
-                        st.rerun()
+                    st.markdown("---")
+                    
+                    # Remove User Section
+                    st.markdown("**Remove User**")
+                    st.info("⚠️ Select a user from the dropdown and click 'Remove User' to permanently delete their account.")
+                    
+                    users = get_all_users()
+                    if users:
+                        user_options = [f"{u['username']} ({u['role']})" for u in users]
+                        selected_user_str = st.selectbox("Select user to remove", user_options, key="remove_user_select")
+                        
+                        if selected_user_str and st.button("Remove User"):
+                            # Parse the selected user
+                            username = selected_user_str.split(" (")[0]
+                            role = selected_user_str.split(" (")[1].rstrip(")")
+                            
+                            if remove_user(username, role):
+                                with st.expander("🗑️ User Removed Successfully!", expanded=True):
+                                    st.write(f"👤 **Username:** `{username}`")
+                                    st.write(f"🔑 **Role:** {role.title()}")
+                            else:
+                                st.error("❌ Failed to remove user")
                     else:
-                        st.error(f"❌ Failed to add {user_type} user")
+                        st.info("No users to remove")
+                
+                with tab2:
+                    st.markdown("#### 📋 View Existing Users")
+                    
+                    # Refresh button
+                    col1, col2 = st.columns([4, 1])
+                    with col1:
+                        st.markdown("**User Directory**")
+                    with col2:
+                        if st.button("🔄 Refresh", key="refresh_users"):
+                            st.rerun()
+                    
+                    # Get all users
+                    all_users = get_all_users()
+                    
+                    if not all_users:
+                        st.info("No users found")
+                    else:
+                        # Filters
+                        col1, col2, col3 = st.columns(3)
+                        with col1:
+                            role_filter = st.multiselect("Filter by Role", ["admin", "user", "guest"], default=["admin", "user", "guest"])
+                        with col2:
+                            domains = load_domains()
+                            domain_filter = st.multiselect("Filter by Domain", domains or [], default=domains or [])
+                        with col3:
+                            # Get all subdomains for selected domains
+                            all_subdomains = []
+                            for dom in domain_filter:
+                                all_subdomains.extend(load_subdomains(dom))
+                            all_subdomains = list(set(all_subdomains))  # Remove duplicates
+                            subdomain_filter = st.multiselect("Filter by Subdomain", all_subdomains or [], default=all_subdomains or [])
+                        
+                        # Filter users
+                        filtered_users = []
+                        for user in all_users:
+                            if user['role'] not in role_filter:
+                                continue
+                            if user['role'] == 'user':
+                                if domain_filter and user.get('domain') not in domain_filter:
+                                    continue
+                                if subdomain_filter and user.get('subdomain') not in subdomain_filter:
+                                    continue
+                            filtered_users.append(user)
+                        
+                        st.info(f"📊 **Showing {len(filtered_users)} of {len(all_users)} users** (filtered by: {', '.join(role_filter) if role_filter else 'all roles'})")
+                        
+                        # Display filtered users in a table
+                        if filtered_users:
+                            # Create a DataFrame for better display
+                            user_data = []
+                            for user in filtered_users:
+                                user_data.append({
+                                    "Username": user['username'],
+                                    "Role": user['role'],
+                                    "Domain": user.get('domain', '-'),
+                                    "Subdomain": user.get('subdomain', '-')
+                                })
+                            
+                            import pandas as pd
+                            df = pd.DataFrame(user_data)
+                            st.dataframe(df, use_container_width=True)
+                        else:
+                            st.info("No users match the selected filters")
                         
             except Exception as e:
                 st.error(f"❌ User management error: {str(e)}")

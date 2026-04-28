@@ -8,7 +8,7 @@ load_dotenv()
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 
 # Database Configuration
-DB_URL = os.getenv("DB_URL", "sqlite:///evaluation.db")
+DB_URL = os.getenv("DB_URL", "sqlite:///C:/Users/pravin_s/Documents/evaluation-tool/evaluation.db")
 
 # Excel File Configuration
 EXCEL_FILE = os.getenv("EXCEL_FILE", "data/users.xlsx")

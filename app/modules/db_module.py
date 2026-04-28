@@ -5,7 +5,8 @@ from sqlalchemy.orm import sessionmaker, relationship
 from app.config.settings import DB_URL
 from datetime import datetime
 
-engine = create_engine(DB_URL)
+# Create engine with current DB_URL
+engine = create_engine(DB_URL, connect_args={"check_same_thread": False})  # Allow multi-threading
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
