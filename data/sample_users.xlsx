@@ -1,0 +1,3 @@
+# Sample Excel file structure
+# This is a placeholder. Create actual Excel with sheets: admin, users, guest
+# Columns: username, password, domain (for users)

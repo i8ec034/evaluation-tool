@@ -20,7 +20,5 @@ coverage.xml
 .mypy_cache
 .pytest_cache
 .hypothesis
-*.db
-data/*.xlsx
 chroma_db/
 .env
