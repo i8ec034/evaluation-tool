@@ -177,7 +177,16 @@ def add_subdomain_to_domain(domain, subdomain):
             return False
 
 def authenticate(username, password, role):
+    username = str(username).strip()
+    password = str(password).strip()
+    role = str(role).strip().lower()
     df_admin, df_user, df_guest = load_users()
+    for df in [df_admin, df_user, df_guest]:
+        if 'username' in df.columns:
+            df['username'] = df['username'].astype(str).str.strip()
+        if 'password' in df.columns:
+            df['password'] = df['password'].astype(str).str.strip()
+
     if role == "admin":
         df = df_admin
     elif role == "user":
@@ -189,6 +198,8 @@ def authenticate(username, password, role):
 
 # User management functions
 def add_admin_user(username, password):
+    username = str(username).strip()
+    password = str(password).strip()
     if USE_DB_FOR_AUTH:
         db = SessionLocal()
         try:
@@ -210,6 +221,10 @@ def add_admin_user(username, password):
         return False
 
 def add_user(username, password, domain, subdomain):
+    username = str(username).strip()
+    password = str(password).strip()
+    domain = str(domain).strip()
+    subdomain = str(subdomain).strip()
     if USE_DB_FOR_AUTH:
         db = SessionLocal()
         try:
@@ -229,6 +244,8 @@ def add_user(username, password, domain, subdomain):
         return False
 
 def add_guest_user(username, password):
+    username = str(username).strip()
+    password = str(password).strip()
     if USE_DB_FOR_AUTH:
         db = SessionLocal()
         try:

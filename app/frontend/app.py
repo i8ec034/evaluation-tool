@@ -8,7 +8,7 @@ from app.modules.auth_module import authenticate
 from app.modules.db_module import SessionLocal, Document, QA, Chunk, QuizResult, QuizAttempt, UserStats
 from app.modules.llm_module import generate_qa
 from app.modules.vector_db_module import chunk_text, store_embeddings
-from app.config.settings import QUESTIONS_PER_QUIZ, THRESHOLD, QA_PER_CHUNK, INTERACTIVE_MODE, CHUNK_SIZE, OVERLAP, CHUNK_TOKEN_THRESHOLD, MAX_ATTEMPTS_PER_USER_PER_DOMAIN
+from app.config.settings import QUESTIONS_PER_QUIZ, THRESHOLD, QA_PER_CHUNK, INTERACTIVE_MODE, CHUNK_SIZE, OVERLAP, CHUNK_TOKEN_THRESHOLD, MAX_ATTEMPTS_PER_USER_PER_DOMAIN, USE_DB_FOR_AUTH, EXCEL_FILE, USER_SHEET
 import random
 import json
 import traceback
@@ -130,10 +130,13 @@ def login():
         password = st.text_input("Password", type="password")
 
         if st.button("Login"):
-            if authenticate(username, password, role):
+            normalized_username = username.strip()
+            normalized_password = password.strip()
+            normalized_role = role.strip().lower()
+            if authenticate(normalized_username, normalized_password, normalized_role):
                 st.session_state.logged_in = True
-                st.session_state.role = role
-                st.session_state.username = username
+                st.session_state.role = normalized_role
+                st.session_state.username = normalized_username
                 st.success("Logged in!")
                 st.rerun()
             else:
@@ -708,15 +711,25 @@ def admin_panel():
 def user_quiz():
     try:
         db = SessionLocal()
-        df_user = pd.read_excel('data/users.xlsx', sheet_name='users')
-        user_row = df_user[df_user['username'] == st.session_state.username]
-        
-        if user_row.empty:
-            st.error("❌ User not found")
-            return
-        
-        domain = user_row['domain'].iloc[0]
-        subdomain = user_row['subdomain'].iloc[0] if 'subdomain' in user_row.columns else None
+        if USE_DB_FOR_AUTH:
+            from app.modules.db_module import User
+            user_obj = db.query(User).filter(User.username == st.session_state.username).first()
+            if not user_obj:
+                st.error("❌ User not found")
+                db.close()
+                return
+            domain = user_obj.domain
+            subdomain = user_obj.subdomain
+        else:
+            df_user = pd.read_excel(EXCEL_FILE, sheet_name=USER_SHEET)
+            user_row = df_user[df_user['username'] == st.session_state.username]
+            if user_row.empty:
+                st.error("❌ User not found")
+                db.close()
+                return
+            domain = user_row['domain'].iloc[0]
+            subdomain = user_row['subdomain'].iloc[0] if 'subdomain' in user_row.columns else None
+
         st.title(f" Evaluation - {domain}")
         st.markdown("---")
 
